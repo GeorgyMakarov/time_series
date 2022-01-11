@@ -56,7 +56,7 @@ SELECT User, Host FROM mysql.user;
 ```
 
 To add new user on Ipv6 start from checking the Ipv6 on both the client and
-the server side. Visit (www.icanhazip.com)[https:://www.icanhazip.com]
+the server side. Visit [www.icanhazip.com](https:://www.icanhazip.com)
 
 ```sql
 CREATE USER 'newuser'@'<ip_adress>' IDENTIFIED BY 'newpassword';
