@@ -1,0 +1,93 @@
+---
+title: "ARIMA and RNN"
+author: "Georgy Makarov"
+date: "3/10/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Dependencies
+
+```{r, warning=FALSE, message=FALSE}
+invisible(lapply(c("dplyr", "urca", "fpp2"), library, character.only = T))
+```
+
+
+## Raw data
+
+We use `USDCHF` univariate time series of daily foreign exchange rates between
+*USD* and *CHF* in this script. This time series comes from `timeSeries` 
+library. The data consist of **62496** observations.
+
+```{r}
+data <- timeSeries::USDCHF
+data <- ts(data, frequency = 365)
+cat(paste("Time series has length", length(data), "\n"))
+```
+
+
+## Exploratory data analysis
+
+### Split data into training and testing
+
+The length of time series is relatively short for machine learning problem. It
+allows us to use **80/20** split for training and testing sets. Since we will be
+training different models in this analysis, we can benefit from splitting the
+**20** percent of the data into *hold out* and *test* sets.
+
+```{r}
+training <- data[1:49997]
+hold_out <- data[49997:56247]
+testing  <- data[56247:62496]
+```
+
+
+### Eliminate outliers
+
+Testing the time series for outliers using `tsoutliers` from `forecast` package
+shows that there are **7** outliers. We replace those with suggested values.
+
+```{r}
+y              <- ts(training, frequency = 365)
+y_out          <- tsoutliers(y)
+y[y_out$index] <- y_out$replacements
+```
+
+
+### Box-Cox transformation
+
+Plot **1** shows that the variation of time series changes over time. We might
+want to apply `Box-Cox` transformation to time series to make the variation more
+stable.
+
+```{r, echo=FALSE, fig.cap="Fig 1. Exchange rates time series."}
+plot(y, frame = F, xlab = "", ylab = "USD-CHF")
+```
+
+```{r}
+ly  <- BoxCox.lambda(y)
+ybx <- BoxCox(y, ly)
+yts <- ts(ybx, frequency = 365)
+rm(ybx, ly, y_out)
+```
+
+
+### Baseline forecast
+
+## Prepare data for the modeling
+
+### Determine stationarity
+
+### Research seasonality
+
+## Train ARIMA model
+
+### Auto ARIMA
+
+### Best ARIMA model search
+
+### Best ARIMA forecast
