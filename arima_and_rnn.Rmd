@@ -72,21 +72,128 @@ plot(y, frame = F, xlab = "", ylab = "USD-CHF")
 ly  <- BoxCox.lambda(y)
 ybx <- BoxCox(y, ly)
 yts <- ts(ybx, frequency = 365)
-rm(ybx, ly, y_out)
+rm(ybx, y_out)
 ```
 
 
 ### Baseline forecast
 
+We need baseline forecast to establish minimal error for holdout dataset. There
+is no clear evidence of seasonality in training data set, so we can use `naive`
+method of forecasting.
+
+```{r}
+yb <- naive(yts, h = length(hold_out))
+```
+
+The `ACF` plot of residuals for `naive` forecast is shows many spikes, which
+confirms that the model is not following the time series pattern.
+
+```{r, echo=FALSE, fig.cap="Plot 2. ACF plot of naive model."}
+acf(as.numeric(na.omit(yb$residuals)), lag.max = 20)
+```
+
+Despite bad `ACF` plot, mean value of residuals is close to **0**.
+
+```{r}
+m1 <- round(mean(yb$residuals, na.rm = T), 3)
+cat(paste("Mean value of naive model residuals ", m1, "\n"))
+```
+
+The *p-value* of `Ljung-Box` test is small and confirms that there is auto
+correlation in residuals.
+
+```{r}
+Box.test(na.omit(yb$residuals), lag = 20, type = "Ljung-Box")
+```
+
+Comparison of hold out data set and the forecast from `naive` model shows large
+difference between actual data and projections.
+
+```{r}
+yb$mean <- InvBoxCox(yb$mean, ly)
+mape    <- round(accuracy(yb, hold_out)[2, 5], 2)
+cat(paste("Baseline MAPE on hold out set is", mape, "\n"))
+```
+
+```{r, echo=FALSE, fig.cap="Plot 2. Baseline forecast on hold out set."}
+plot(x = 1:length(hold_out),
+     y = hold_out,
+     type = "l",
+     frame = F,
+     xlab  = "hold out set",
+     ylab  = "usd-chf")
+lines(x = 1:length(hold_out),
+      y = yb$mean,
+      col = "red")
+```
+
+
 ## Prepare data for the modeling
 
 ### Determine stationarity
 
-### Research seasonality
+Dickey-Fuller test from `tseries` package has *p-value* higher than **0.05**. 
+This proves that the data are non-stationary.
+
+```{r}
+tseries::adf.test(yts, alternative = "stationary")
+```
+
+`KPSS` test has opposite null hypothesis and *p-value* lower than **0.05**. This
+test also proves that the data are non-stationary.
+
+```{r}
+tseries::kpss.test(yts, null = "Level")
+```
+
+The unit root tests from `urca` package also prove the data to be non-stationary
+on long and short lags.
+
+```{r}
+urca::ur.kpss(yts, type = "mu", lags = "short")    ## close to non-stationary
+```
+
+```{r}
+urca::ur.kpss(yts, type = "mu", lags = "long")     ## stationary
+```
+
+We can de-trend the time series by applyinh first differencies. The tests show
+that the difference data are stationary.
+
+```{r, warning=FALSE, message=FALSE}
+d1 <- diff(yts, differences = 1)                  
+p1 <- tseries::adf.test(d1, alternative = "stationary")$p.value
+p2 <- tseries::kpss.test(d1, null = "Level")$p.value
+cat(paste(" Dickey-Fuller test p-value is", p1, "-- stationary", "\n",
+          "KPSS test p-value is", p2, "-- stationary", "\n"))
+```
+
 
 ## Train ARIMA model
 
 ### Auto ARIMA
+
+Auto ARIMA function gives us the idea of the most effective combination of 
+model parameters -- (2, 1, 0).
+
+```{r}
+fit_aa <- auto.arima(yts)
+fit_aa
+```
+
+Residuals of auto ARIMA model
+
+```{r}
+checkresiduals(fit_aa)
+```
+
+```{r}
+acf(as.numeric(fit_aa$residuals), lag.max = 20)          ## 5 significant spikes
+Box.test(fit_aa$residuals, lag = 20, type = "Ljung-Box") ## correlated
+mean(fit_aa$residuals)                                   ## almost 0
+```
+
 
 ### Best ARIMA model search
 

@@ -1,0 +1,88 @@
+---
+title: "Use Python in Rstudio"
+author: "Georgy Makarov"
+date: "5/2/2022"
+output: 
+  html_document:
+    theme: cerulean
+    highlight: arrow
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo    = TRUE)
+knitr::opts_chunk$set(warning = TRUE)
+knitr::opts_chunk$set(message = TRUE)
+```
+
+## Summary
+
+`Rstudio` allows to develop and run `python` scripts. This text shows how to
+prepare `Rstudio` to run `python` scripts. Preparation includes configuring 
+`python`. This text does not cover installation of `python`. The following guide
+applies to local `Ubuntu` machine. The text shows **2** ways: using `Linux` 
+terminal and using `Rstudio` methods.
+
+## Terminal method
+
+At first, you work in `terminal` of your machine. In terminal go to your project
+directory. Install virtual environment. Create new `python` environment for your
+project. Activate your new environment. Install libraries.
+
+```{bash, eval = FALSE}
+cd <your-project-directory>
+pip3 install virtualenv
+virtualenv <my-env>
+source <my-env>/bin/activate
+pip install <lib-1> <lib-2> <lib-3>
+```
+
+Here:
+
+ - `<your-project-directory>` -- path to your project  
+ - `<my-env>` -- name of your environment  
+ - `<lib-1> <lib-2> <lib-3>`-- names of libraries you want to install
+ 
+ Then you install and configure `reticulate` library in `Rstudio`. Configure
+ `Rstudio` to point to the `python` in your virtual environment. Restart `R`
+ session.
+ 
+```{r, eval = FALSE}
+install.packages("reticulate")
+library("reticulate")
+Sys.setenv(RETICULATE_PYTHON = "<my-env>/bin/python")
+```
+
+The latter exists in all sessions. You do not need to do this command every
+time.
+
+
+## Rstudio method
+
+Here you set everything up using `Rstudio` only. Install `reticulate` package.
+Navigate to your project folder. Create new virtual environment and specify
+packages you would like to have in it. Add path to `python` in your virtual
+environment.
+
+```{r, eval = FALSE}
+install.packages("reticulate")
+library("reticulate")
+virtualenv_create(envname  = "<my-env>",
+                  packages = c("<lib-1>", "<lib-2>", "<lib-3>"))
+Sys.setenv(RETICULATE_PYTHON = "<my-env>/bin/python")
+```
+
+Activate your new virtual environment. Check that your `python` configuration
+is now pointing to your virtual environment.
+
+```{r, eval = FALSE}
+use_virtualenv("<my-env>")
+py_config()
+```
+
+Check that your desired packages are present in your virtual environment.
+
+```{r, eval = FALSE}
+grep(pattern = "<lib-1>|<lib-2>|<lib-3>",
+     x       = as.character(py_list_packages(envname = "<my-env>")$package))
+```
+
