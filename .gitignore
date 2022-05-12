@@ -1,2 +1,2 @@
 production_reports.csv
-./tensorflow/mnist_model
+tensorflow/mnist_model/
