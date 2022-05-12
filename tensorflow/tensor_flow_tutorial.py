@@ -304,10 +304,49 @@ for example_inputs, example_labels in w2.train.take(1):
   print(f'Labels shape (batch, time, features): {example_labels.shape}')
 
 
+### ---                     Create single step models                    --- ###
+# Create single step window
+single_step_window = WindowGenerator(
+    input_width=1, label_width=1, shift=1,
+    label_columns=['T (degC)'])
+single_step_window
+
+# Define baseline class
+class Baseline(tf.keras.Model):
+  def __init__(self, label_index = None):
+    super().__init__()
+    self.label_index = label_index
+
+  def call(self, inputs):
+    if self.label_index is None:
+      return inputs
+    result = inputs[:, :, self.label_index]
+    return result[:, :, tf.newaxis]
 
 
+baseline = Baseline(label_index=column_indices['T (degC)'])
+
+baseline.compile(loss    = tf.losses.MeanSquaredError(), 
+                 metrics = [tf.metrics.MeanAbsoluteError()])
+
+val_performance = {}
+performance     = {}
+val_performance['Baseline'] = baseline.evaluate(single_step_window.val)
+performance['Baseline']     = baseline.evaluate(single_step_window.test, verbose = 0)
 
 
+wide_window = WindowGenerator(
+    input_width=24, label_width=24, shift=1,
+    label_columns=['T (degC)'])
+
+wide_window
+
+print('Input shape:', wide_window.example[0].shape)
+print('Output shape:', baseline(wide_window.example[0]).shape)
+
+plt.close('all')
+wide_window.plot(baseline)
+plt.show()
 
 
 

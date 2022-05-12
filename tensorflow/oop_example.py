@@ -44,7 +44,7 @@ def split_window(self, features):
   lbl = features[:, self.lbl_slc, :]
   
   if self.lbl_col is not None:
-    lbls = tf.stack([lbls[:, :, self.col_idx[name]] for name in self.lbl_col], axis=-1) # TODO: problem is here
+    lbl = tf.stack([lbl[:, :, self.col_idx[name]] for name in self.lbl_col], axis=-1)
     
   inp.set_shape([None, self.inp_wd, None])
   lbl.set_shape([None, self.lbl_wd, None])
@@ -53,6 +53,29 @@ def split_window(self, features):
 
 window_generator.split_window = split_window
 
+
+# Create custom function to convert time series data frame to tensorflow
+# dataset.
+def make_dataset(self, data):
+  data = np.array(data, dtype = np.float32)
+  ds   = tf.keras.utils.timeseries_dataset_from_array(
+    data            = data,
+    targets         = None,
+    sequence_length = self.total_wd,
+    sequence_stride = 1,
+    shuffle         = T,
+    batch_size      = 32,
+  )
+  
+  ds = ds.map(self.split_window)
+  
+  return ds
+
+window_generator.make_dataset = make_dataset
+
+
+# Add properties to be able to access the parameters of the datasets generated
+# by make_dataset
 
 # Create data frames
 mu, sg = 0, 0.1
@@ -74,7 +97,7 @@ df3 = pd.DataFrame(dict(col1     = np.random.normal(mu, sg, 10),
 w_test = window_generator(
   inp_wd  = 10,
   lbl_wd  = 1,
-  shift   = 10,
+  shift   = 1,
   tr_df   = df1,
   vl_df   = df2,
   te_df   = df3,
@@ -89,8 +112,9 @@ example_window = tf.stack([np.array(df1[:w_test.total_wd]),
 
 ex_inp, ex_lbl = w_test.split_window(example_window)
 
-
-
+print(f'Window shape: {example_window.shape}')
+print(f'Inputs shape: {ex_inp.shape}')
+print(f'Labels shape: {ex_lbl.shape}')
 
 
 
