@@ -14,12 +14,20 @@ forecasting problems.
 
 1. clean the data from *NA* values;  
 2. clean the data from non-sense values;  
-3. convert text data to one-hot encoding;  
+3. convert text / factor data to one-hot encoding;  
 4. identify outliers and eliminate them;  
+    * remove outliers;  
+    * replace outliers;  
 5. feature engineering;  
+    * features must have sense to a model;  
+    * replace timestamps with seasonality;  
+    * use *Fourier* to identify complex seasonalities;  
 6. split the data into training, test and validation sets;  
 7. normalize the data;  
+    * use simple mean or moving average;  
+    * use normalization layer for regression;  
 8. split features from labels;  
-9. explore the data;  
+9. explore the data -- return to item 5 if something is not right;  
+10. create model specific objects -- see below;  
 
 ### Conclusion
